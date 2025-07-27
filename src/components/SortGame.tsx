@@ -65,13 +65,19 @@ export default function SortGame() {
 
   const handleWordClick = (wordId: number) => {
     if (gameState !== "playing") return;
-    if (selectedOrder.includes(wordId)) return;
     
-    const newOrder = [...selectedOrder, wordId];
-    setSelectedOrder(newOrder);
-    
-    if (newOrder.length === 4) {
-      checkAnswer(newOrder);
+    if (selectedOrder.includes(wordId)) {
+      // 既に選択済みの場合は取り消し
+      const newOrder = selectedOrder.filter(id => id !== wordId);
+      setSelectedOrder(newOrder);
+    } else {
+      // 新規選択の場合は追加
+      const newOrder = [...selectedOrder, wordId];
+      setSelectedOrder(newOrder);
+      
+      if (newOrder.length === 4) {
+        checkAnswer(newOrder);
+      }
     }
   };
 
@@ -136,10 +142,10 @@ export default function SortGame() {
               <button
                 key={word.id}
                 onClick={() => handleWordClick(word.id)}
-                disabled={selectedOrder.includes(word.id) || gameState !== "playing"}
+                disabled={gameState !== "playing"}
                 className={`flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-sm font-bold leading-normal tracking-[0.015em] w-full ${
                   selectedOrder.includes(word.id)
-                    ? "bg-[#dce8f3] text-[#101518]"
+                    ? "bg-[#dce8f3] text-[#101518] hover:bg-[#c8daf0]"
                     : gameState !== "playing"
                     ? "bg-[#f5f5f5] text-[#757575] cursor-not-allowed"
                     : "bg-[#eaedf1] text-[#101518] hover:bg-[#dce8f3]"
