@@ -12,8 +12,8 @@ export default function SortGame() {
   const [currentWords, setCurrentWords] = useState<Word[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<number[]>([]);
   const [gameState, setGameState] = useState<
-    "playing" | "correct" | "incorrect"
-  >("playing");
+    "waiting" | "playing" | "correct" | "incorrect"
+  >("waiting");
   const [wordCount, setWordCount] = useState<number>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("sortGameWordCount");
@@ -21,6 +21,9 @@ export default function SortGame() {
     }
     return 4;
   });
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [endTime, setEndTime] = useState<number | null>(null);
+  const [currentTime, setCurrentTime] = useState<number>(0);
 
   const loadWordsFromCSV = async () => {
     try {
@@ -74,7 +77,10 @@ export default function SortGame() {
     }));
     setCurrentWords(wordsWithId);
     setSelectedOrder([]);
-    setGameState("playing");
+    setGameState("waiting");
+    setStartTime(null);
+    setEndTime(null);
+    setCurrentTime(0);
   };
 
   useEffect(() => {
@@ -91,11 +97,31 @@ export default function SortGame() {
     }
   }, [wordCount]);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+
+    if (gameState === "playing" && startTime) {
+      interval = setInterval(() => {
+        setCurrentTime(Date.now() - startTime);
+      }, 100);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [gameState, startTime]);
+
   const handleWordCountChange = (newCount: number) => {
     setWordCount(newCount);
     if (typeof window !== "undefined") {
       localStorage.setItem("sortGameWordCount", newCount.toString());
     }
+  };
+
+  const startGame = () => {
+    setGameState("playing");
+    setStartTime(Date.now());
+    setCurrentTime(0);
   };
 
   const handleWordClick = (wordId: number) => {
@@ -128,12 +154,25 @@ export default function SortGame() {
     const isCorrect = orderedWords.every(
       (word, index) => word === correctOrder[index]
     );
+
+    if (isCorrect) {
+      setEndTime(Date.now());
+    }
+
     setGameState(isCorrect ? "correct" : "incorrect");
+  };
+
+  const formatTime = (timeMs: number) => {
+    const seconds = Math.floor(timeMs / 1000);
+    const milliseconds = Math.floor((timeMs % 1000) / 10);
+    return `${seconds}.${milliseconds.toString().padStart(2, "0")}秒`;
   };
 
   const resetSelection = () => {
     setSelectedOrder([]);
-    setGameState("playing");
+    if (gameState !== "waiting") {
+      setGameState("playing");
+    }
   };
 
   return (
@@ -151,25 +190,73 @@ export default function SortGame() {
           五十音順に選択してください
         </h3>
 
+        {gameState === "playing" && startTime && (
+          <div className="px-4 py-2">
+            <p className="text-center text-lg font-bold text-blue-600">
+              ⏱️ {formatTime(currentTime)}
+            </p>
+          </div>
+        )}
+
         <div className="px-4 py-3">
           <div className="flex items-center justify-center gap-3">
-            <label className="text-sm font-medium text-gray-700">単語数:</label>
-            <select
-              value={wordCount}
-              onChange={(e) => handleWordCountChange(Number(e.target.value))}
-              disabled={gameState !== "playing" || selectedOrder.length > 0}
-              className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-            >
-              {Array.from({ length: 23 }, (_, i) => i + 3).map((count) => (
-                <option key={count} value={count}>
-                  {count}個
-                </option>
-              ))}
-            </select>
+            <div>
+              <label className="text-sm font-medium text-gray-700">
+                単語数:
+              </label>
+              <select
+                value={wordCount}
+                onChange={(e) => handleWordCountChange(Number(e.target.value))}
+                disabled={gameState === "playing" || selectedOrder.length > 0}
+                className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                {Array.from({ length: 23 }, (_, i) => i + 3).map((count) => (
+                  <option key={count} value={count}>
+                    {count}個
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+          {gameState !== "waiting" && (
+            <div className="flex justify-stretch">
+              <div className="flex flex-1 gap-3 flex-wrap px-4 py-3 justify-between">
+                <button
+                  onClick={resetSelection}
+                  disabled={selectedOrder.length === 0 || gameState === "correct" || gameState === "incorrect"}
+                  className={`flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-sm font-bold leading-normal tracking-[0.015em] ${
+                    selectedOrder.length > 0 && gameState === "playing"
+                      ? "bg-[#eaedf1] text-[#101518] hover:bg-[#dce8f3]"
+                      : "bg-[#f5f5f5] text-[#757575] cursor-not-allowed"
+                  }`}
+                >
+                  <span className="truncate">リセット</span>
+                </button>
+                <button
+                  onClick={() => initializeGame()}
+                  className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 bg-[#4CAF50] text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-[#45a049]"
+                >
+                  <span className="truncate">新しいゲーム</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {gameState !== "playing" && (
+        {gameState === "waiting" && (
+          <div className="px-4 py-3">
+            <div className="text-center">
+              <button
+                onClick={startGame}
+                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg text-lg"
+              >
+                🚀 スタート
+              </button>
+            </div>
+          </div>
+        )}
+
+        {(gameState === "correct" || gameState === "incorrect") && (
           <div className="px-4 py-3">
             <div
               className={`text-center p-3 rounded-lg ${
@@ -178,36 +265,45 @@ export default function SortGame() {
                   : "bg-red-100 text-red-800"
               }`}
             >
-              {gameState === "correct" ? "正解です！" : "不正解です"}
+              <div className="text-lg font-bold mb-2">
+                {gameState === "correct" ? "🎉 正解です！" : "❌ 不正解です"}
+              </div>
+              {gameState === "correct" && startTime && endTime && (
+                <div className="text-sm">
+                  クリア時間: {formatTime(endTime - startTime)}
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        <div className="flex justify-center">
-          <div className="w-full max-w-[480px] grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 px-4 py-3">
-            {currentWords.map((word) => (
-              <button
-                key={word.id}
-                onClick={() => handleWordClick(word.id)}
-                disabled={gameState !== "playing"}
-                className={`flex cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-1 sm:px-2 md:px-4 text-xs sm:text-sm font-bold leading-normal tracking-[0.015em] w-full ${
-                  selectedOrder.includes(word.id)
-                    ? "bg-[#dce8f3] text-[#101518] hover:bg-[#c8daf0]"
-                    : gameState !== "playing"
-                    ? "bg-[#f5f5f5] text-[#757575] cursor-not-allowed"
-                    : "bg-[#eaedf1] text-[#101518] hover:bg-[#dce8f3]"
-                }`}
-              >
-                <span className="truncate">
-                  {selectedOrder.includes(word.id) &&
-                    `${selectedOrder.indexOf(word.id) + 1}. `}
-                  {word.text}
-                </span>
-              </button>
-            ))}
+        {gameState !== "waiting" && (
+          <div className="flex justify-center">
+            <div className="w-full max-w-[480px] grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 px-4 py-3">
+              {currentWords.map((word) => (
+                <button
+                  key={word.id}
+                  onClick={() => handleWordClick(word.id)}
+                  disabled={gameState !== "playing"}
+                  className={`flex cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-1 sm:px-2 md:px-4 text-xs sm:text-sm font-bold leading-normal tracking-[0.015em] w-full ${
+                    selectedOrder.includes(word.id)
+                      ? "bg-[#dce8f3] text-[#101518] hover:bg-[#c8daf0]"
+                      : gameState !== "playing"
+                      ? "bg-[#f5f5f5] text-[#757575] cursor-not-allowed"
+                      : "bg-[#eaedf1] text-[#101518] hover:bg-[#dce8f3]"
+                  }`}
+                >
+                  <span className="truncate">
+                    {selectedOrder.includes(word.id) &&
+                      `${selectedOrder.indexOf(word.id) + 1}. `}
+                    {word.text}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        {selectedOrder.length > 0 && (
+        )}
+        {selectedOrder.length > 0 && gameState !== "waiting" && (
           <div className="px-4 py-2">
             <p className="text-center text-sm text-gray-600">
               選択順序:{" "}
@@ -217,28 +313,6 @@ export default function SortGame() {
             </p>
           </div>
         )}
-
-        <div className="flex justify-stretch">
-          <div className="flex flex-1 gap-3 flex-wrap px-4 py-3 justify-between">
-            <button
-              onClick={resetSelection}
-              disabled={selectedOrder.length === 0}
-              className={`flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-sm font-bold leading-normal tracking-[0.015em] ${
-                selectedOrder.length > 0
-                  ? "bg-[#eaedf1] text-[#101518] hover:bg-[#dce8f3]"
-                  : "bg-[#f5f5f5] text-[#757575] cursor-not-allowed"
-              }`}
-            >
-              <span className="truncate">リセット</span>
-            </button>
-            <button
-              onClick={() => initializeGame()}
-              className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 bg-[#4CAF50] text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-[#45a049]"
-            >
-              <span className="truncate">新しいゲーム</span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
