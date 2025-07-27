@@ -168,6 +168,19 @@ export default function SortGame() {
     return `${seconds}.${milliseconds.toString().padStart(2, "0")}秒`;
   };
 
+  const generateTweetText = () => {
+    if (startTime && endTime) {
+      const clearTime = formatTime(endTime - startTime);
+      return `五十音順ソートをクリアしました！\n${wordCount}個の単語を${clearTime}で並び替え完了🎉\n\nhttps://riddle-drill-hub.vercel.app/ \n\n #五十音順ソート`;
+    }
+    return "";
+  };
+
+  const getTweetUrl = () => {
+    const text = encodeURIComponent(generateTweetText());
+    return `https://twitter.com/intent/tweet?text=${text}`;
+  };
+
   const resetSelection = () => {
     setSelectedOrder([]);
     if (gameState !== "waiting") {
@@ -223,7 +236,11 @@ export default function SortGame() {
               <div className="flex flex-1 gap-3 flex-wrap px-4 py-3 justify-between">
                 <button
                   onClick={resetSelection}
-                  disabled={selectedOrder.length === 0 || gameState === "correct" || gameState === "incorrect"}
+                  disabled={
+                    selectedOrder.length === 0 ||
+                    gameState === "correct" ||
+                    gameState === "incorrect"
+                  }
                   className={`flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-sm font-bold leading-normal tracking-[0.015em] ${
                     selectedOrder.length > 0 && gameState === "playing"
                       ? "bg-[#eaedf1] text-[#101518] hover:bg-[#dce8f3]"
@@ -269,8 +286,20 @@ export default function SortGame() {
                 {gameState === "correct" ? "🎉 正解です！" : "❌ 不正解です"}
               </div>
               {gameState === "correct" && startTime && endTime && (
-                <div className="text-sm">
-                  クリア時間: {formatTime(endTime - startTime)}
+                <div className="space-y-2">
+                  <div className="text-sm">
+                    クリア時間: {formatTime(endTime - startTime)}
+                  </div>
+                  <div>
+                    <a
+                      href={getTweetUrl()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-colors"
+                    >
+                      🐦 Xでシェア
+                    </a>
+                  </div>
                 </div>
               )}
             </div>
