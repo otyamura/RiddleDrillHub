@@ -12,7 +12,13 @@ export default function SortGame() {
   const [currentWords, setCurrentWords] = useState<Word[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<number[]>([]);
   const [gameState, setGameState] = useState<"playing" | "correct" | "incorrect">("playing");
-  const [wordCount, setWordCount] = useState<number>(4);
+  const [wordCount, setWordCount] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sortGameWordCount');
+      return saved ? parseInt(saved, 10) : 4;
+    }
+    return 4;
+  });
 
   const loadWordsFromCSV = async () => {
     try {
@@ -70,6 +76,13 @@ export default function SortGame() {
     }
   }, [wordCount]);
 
+  const handleWordCountChange = (newCount: number) => {
+    setWordCount(newCount);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sortGameWordCount', newCount.toString());
+    }
+  };
+
   const handleWordClick = (wordId: number) => {
     if (gameState !== "playing") return;
     
@@ -126,7 +139,7 @@ export default function SortGame() {
             <label className="text-sm font-medium text-gray-700">単語数:</label>
             <select
               value={wordCount}
-              onChange={(e) => setWordCount(Number(e.target.value))}
+              onChange={(e) => handleWordCountChange(Number(e.target.value))}
               disabled={gameState !== "playing" || selectedOrder.length > 0}
               className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
