@@ -12,6 +12,7 @@ export default function SortGame() {
   const [currentWords, setCurrentWords] = useState<Word[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<number[]>([]);
   const [gameState, setGameState] = useState<"playing" | "correct" | "incorrect">("playing");
+  const [wordCount, setWordCount] = useState<number>(4);
 
   const loadWordsFromCSV = async () => {
     try {
@@ -45,7 +46,7 @@ export default function SortGame() {
     if (words.length === 0) return;
     
     const shuffledWords = shuffleArray(words);
-    const selectedWords = shuffledWords.slice(0, 4);
+    const selectedWords = shuffledWords.slice(0, wordCount);
     const wordsWithId = selectedWords.map((word, index) => ({
       id: index + 1,
       text: word
@@ -63,6 +64,12 @@ export default function SortGame() {
     loadAndInitialize();
   }, []);
 
+  useEffect(() => {
+    if (wordPool.length > 0) {
+      initializeGame();
+    }
+  }, [wordCount]);
+
   const handleWordClick = (wordId: number) => {
     if (gameState !== "playing") return;
     
@@ -75,7 +82,7 @@ export default function SortGame() {
       const newOrder = [...selectedOrder, wordId];
       setSelectedOrder(newOrder);
       
-      if (newOrder.length === 4) {
+      if (newOrder.length === wordCount) {
         checkAnswer(newOrder);
       }
     }
@@ -113,6 +120,25 @@ export default function SortGame() {
         <h3 className="text-[#101518] tracking-light text-2xl font-bold leading-tight px-4 text-center pb-2 pt-5">
           五十音順に選択してください
         </h3>
+        
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-center gap-3">
+            <label className="text-sm font-medium text-gray-700">単語数:</label>
+            <select
+              value={wordCount}
+              onChange={(e) => setWordCount(Number(e.target.value))}
+              disabled={gameState !== "playing" || selectedOrder.length > 0}
+              className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value={3}>3個</option>
+              <option value={4}>4個</option>
+              <option value={5}>5個</option>
+              <option value={6}>6個</option>
+              <option value={7}>7個</option>
+              <option value={8}>8個</option>
+            </select>
+          </div>
+        </div>
         
         {selectedOrder.length > 0 && (
           <div className="px-4 py-2">
