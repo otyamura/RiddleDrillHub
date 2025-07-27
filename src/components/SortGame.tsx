@@ -11,10 +11,12 @@ export default function SortGame() {
   const [wordPool, setWordPool] = useState<string[]>([]);
   const [currentWords, setCurrentWords] = useState<Word[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<number[]>([]);
-  const [gameState, setGameState] = useState<"playing" | "correct" | "incorrect">("playing");
+  const [gameState, setGameState] = useState<
+    "playing" | "correct" | "incorrect"
+  >("playing");
   const [wordCount, setWordCount] = useState<number>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('sortGameWordCount');
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("sortGameWordCount");
       return saved ? parseInt(saved, 10) : 4;
     }
     return 4;
@@ -22,16 +24,29 @@ export default function SortGame() {
 
   const loadWordsFromCSV = async () => {
     try {
-      const response = await fetch('/data/aiueo.csv');
+      const response = await fetch("/data/aiueo.csv");
       const text = await response.text();
-      const words = text.trim().split('\n').filter(word => word.trim() !== '');
+      const words = text
+        .trim()
+        .split("\n")
+        .filter((word) => word.trim() !== "");
       setWordPool(words);
       return words;
     } catch (error) {
-      console.error('CSVファイルの読み込みエラー:', error);
+      console.error("CSVファイルの読み込みエラー:", error);
       const fallbackWords = [
-        "りんご", "いぬ", "うさぎ", "ねこ", "ろうそく", "かまきり", 
-        "マンゴー", "しょうゆ", "えんぴつ", "きりん", "たまご", "ばなな"
+        "りんご",
+        "いぬ",
+        "うさぎ",
+        "ねこ",
+        "ろうそく",
+        "かまきり",
+        "マンゴー",
+        "しょうゆ",
+        "えんぴつ",
+        "きりん",
+        "たまご",
+        "ばなな",
       ];
       setWordPool(fallbackWords);
       return fallbackWords;
@@ -50,12 +65,12 @@ export default function SortGame() {
   const initializeGame = async (wordsArray?: string[]) => {
     const words = wordsArray || wordPool;
     if (words.length === 0) return;
-    
+
     const shuffledWords = shuffleArray(words);
     const selectedWords = shuffledWords.slice(0, wordCount);
     const wordsWithId = selectedWords.map((word, index) => ({
       id: index + 1,
-      text: word
+      text: word,
     }));
     setCurrentWords(wordsWithId);
     setSelectedOrder([]);
@@ -78,23 +93,23 @@ export default function SortGame() {
 
   const handleWordCountChange = (newCount: number) => {
     setWordCount(newCount);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('sortGameWordCount', newCount.toString());
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sortGameWordCount", newCount.toString());
     }
   };
 
   const handleWordClick = (wordId: number) => {
     if (gameState !== "playing") return;
-    
+
     if (selectedOrder.includes(wordId)) {
       // 既に選択済みの場合は取り消し
-      const newOrder = selectedOrder.filter(id => id !== wordId);
+      const newOrder = selectedOrder.filter((id) => id !== wordId);
       setSelectedOrder(newOrder);
     } else {
       // 新規選択の場合は追加
       const newOrder = [...selectedOrder, wordId];
       setSelectedOrder(newOrder);
-      
+
       if (newOrder.length === wordCount) {
         checkAnswer(newOrder);
       }
@@ -102,15 +117,17 @@ export default function SortGame() {
   };
 
   const checkAnswer = (order: number[]) => {
-    const orderedWords = order.map(id => 
-      currentWords.find(word => word.id === id)?.text || ""
+    const orderedWords = order.map(
+      (id) => currentWords.find((word) => word.id === id)?.text || ""
     );
-    
-    const correctOrder = [...orderedWords].sort((a, b) => 
-      a.localeCompare(b, 'ja', { numeric: true })
+
+    const correctOrder = [...orderedWords].sort((a, b) =>
+      a.localeCompare(b, "ja", { numeric: true })
     );
-    
-    const isCorrect = orderedWords.every((word, index) => word === correctOrder[index]);
+
+    const isCorrect = orderedWords.every(
+      (word, index) => word === correctOrder[index]
+    );
     setGameState(isCorrect ? "correct" : "incorrect");
   };
 
@@ -133,7 +150,7 @@ export default function SortGame() {
         <h3 className="text-[#101518] tracking-light text-2xl font-bold leading-tight px-4 text-center pb-2 pt-5">
           五十音順に選択してください
         </h3>
-        
+
         <div className="px-4 py-3">
           <div className="flex items-center justify-center gap-3">
             <label className="text-sm font-medium text-gray-700">単語数:</label>
@@ -152,24 +169,16 @@ export default function SortGame() {
             </select>
           </div>
         </div>
-        
-        {selectedOrder.length > 0 && (
-          <div className="px-4 py-2">
-            <p className="text-center text-sm text-gray-600">
-              選択順序: {selectedOrder.map(id => 
-                currentWords.find(w => w.id === id)?.text
-              ).join(" → ")}
-            </p>
-          </div>
-        )}
 
         {gameState !== "playing" && (
           <div className="px-4 py-3">
-            <div className={`text-center p-3 rounded-lg ${
-              gameState === "correct" 
-                ? "bg-green-100 text-green-800" 
-                : "bg-red-100 text-red-800"
-            }`}>
+            <div
+              className={`text-center p-3 rounded-lg ${
+                gameState === "correct"
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
               {gameState === "correct" ? "正解です！" : "不正解です"}
             </div>
           </div>
@@ -191,15 +200,25 @@ export default function SortGame() {
                 }`}
               >
                 <span className="truncate">
-                  {selectedOrder.includes(word.id) && 
-                    `${selectedOrder.indexOf(word.id) + 1}. `
-                  }
+                  {selectedOrder.includes(word.id) &&
+                    `${selectedOrder.indexOf(word.id) + 1}. `}
                   {word.text}
                 </span>
               </button>
             ))}
           </div>
         </div>
+        {selectedOrder.length > 0 && (
+          <div className="px-4 py-2">
+            <p className="text-center text-sm text-gray-600">
+              選択順序:{" "}
+              {selectedOrder
+                .map((id) => currentWords.find((w) => w.id === id)?.text)
+                .join(" → ")}
+            </p>
+          </div>
+        )}
+
         <div className="flex justify-stretch">
           <div className="flex flex-1 gap-3 flex-wrap px-4 py-3 justify-between">
             <button
