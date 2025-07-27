@@ -160,12 +160,11 @@ export default function SortGame() {
               disabled={gameState !== "playing" || selectedOrder.length > 0}
               className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
-              <option value={3}>3個</option>
-              <option value={4}>4個</option>
-              <option value={5}>5個</option>
-              <option value={6}>6個</option>
-              <option value={7}>7個</option>
-              <option value={8}>8個</option>
+              {Array.from({ length: 23 }, (_, i) => i + 3).map((count) => (
+                <option key={count} value={count}>
+                  {count}個
+                </option>
+              ))}
             </select>
           </div>
         </div>
