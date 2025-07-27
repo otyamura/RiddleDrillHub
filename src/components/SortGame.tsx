@@ -24,6 +24,8 @@ export default function SortGame() {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [endTime, setEndTime] = useState<number | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
+  const [userAnswer, setUserAnswer] = useState<string[]>([]);
+  const [correctAnswer, setCorrectAnswer] = useState<string[]>([]);
 
   const loadWordsFromCSV = async () => {
     try {
@@ -154,6 +156,10 @@ export default function SortGame() {
     const isCorrect = orderedWords.every(
       (word, index) => word === correctOrder[index]
     );
+
+    // 結果を保存
+    setUserAnswer(orderedWords);
+    setCorrectAnswer(correctOrder);
 
     if (isCorrect) {
       setEndTime(Date.now());
@@ -340,6 +346,39 @@ export default function SortGame() {
                 .map((id) => currentWords.find((w) => w.id === id)?.text)
                 .join(" → ")}
             </p>
+          </div>
+        )}
+
+        {gameState === "incorrect" && userAnswer.length > 0 && correctAnswer.length > 0 && (
+          <div className="px-4 py-2">
+            <div className="text-center">
+              <p className="text-sm font-medium text-gray-700 mb-2">あなたの回答:</p>
+              <div className="flex justify-center gap-1 mb-3">
+                {userAnswer.map((word, index) => (
+                  <span
+                    key={index}
+                    className={`px-2 py-1 rounded text-sm font-medium ${
+                      word === correctAnswer[index]
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {word}
+                  </span>
+                ))}
+              </div>
+              <p className="text-sm font-medium text-gray-700 mb-2">正解:</p>
+              <div className="flex justify-center gap-1">
+                {correctAnswer.map((word, index) => (
+                  <span
+                    key={index}
+                    className="px-2 py-1 rounded text-sm font-medium bg-green-100 text-green-800"
+                  >
+                    {word}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
